@@ -9,20 +9,26 @@ public class GamePanel extends JPanel implements KeyListener {
     private boolean movingRight = false;
     private Timer gameTimer;
 
+    // Score tracking fields
+    private int score = 0;
+    private int highScore = 0;
+    private boolean gameOver = false;
+    private boolean scored = false;
+
+    // Replay button for Game Over screen
+    private JButton replayButton;
+
     public GamePanel() {
         setFocusable(true);
         addKeyListener(this);
         setBackground(Color.CYAN);
 
         player = new Player(180, 200, 40, 400);
-        // Initialize obstacle with window width
         obstacle = new Obstacle(400);
 
-        // Use gameTimer as a class field so it can be stopped on collision
         gameTimer = new Timer(16, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Update player position
                 if (movingLeft) {
                     player.move(-5);
                 }
@@ -30,16 +36,24 @@ public class GamePanel extends JPanel implements KeyListener {
                     player.move(5);
                 }
 
-                // Update obstacle position
                 obstacle.move();
 
-                // Check if obstacle has left the screen, and respawn if so
-                if (obstacle.isOffScreen()) {
-                    obstacle.respawn();
+                if (obstacle.getY() + obstacle.getSize() < player.getY() && !scored) {
+                    score += 10;
+                    scored = true;
                 }
 
-                // Check for collision and stop game if collision detected
+                if (obstacle.isOffScreen()) {
+                    obstacle.respawn();
+                    scored = false;
+                }
+
                 if (collides()) {
+                    if (score > highScore) {
+                        highScore = score;
+                    }
+                    gameOver = true;
+                    replayButton.setVisible(true);
                     gameTimer.stop();
                 }
 
@@ -47,9 +61,27 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         gameTimer.start();
+
+        // Create replay button for Game Over screen
+        replayButton = new JButton("Play Again");
+        replayButton.setFont(new Font("Arial", Font.BOLD, 20));
+        replayButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                score = 0;
+                gameOver = false;
+                scored = false;
+                player = new Player(180, 200, 40, 400);
+                obstacle.respawn();
+                replayButton.setVisible(false);
+                gameTimer.start();
+                requestFocusInWindow();
+            }
+        });
+        replayButton.setVisible(false);
+        this.add(replayButton);
     }
 
-    // Collision detection: checks if player rectangle and obstacle rectangle overlap
     private boolean collides() {
         int playerX = player.getX();
         int playerY = player.getY();
@@ -59,24 +91,51 @@ public class GamePanel extends JPanel implements KeyListener {
         int obstacleY = obstacle.getY();
         int obstacleSize = obstacle.getSize();
 
-        // Simple bounding box overlap: two rectangles collide if they overlap on both axes
         return playerX < obstacleX + obstacleSize &&
-               playerX + playerSize > obstacleX &&
-               playerY < obstacleY + obstacleSize &&
-               playerY + playerSize > obstacleY;
+                playerX + playerSize > obstacleX &&
+                playerY < obstacleY + obstacleSize &&
+                playerY + playerSize > obstacleY;
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Draw player as red circle
-        g.setColor(Color.RED);
-        g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
+        if (gameOver) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
 
-        // Draw obstacle as grey square
-        g.setColor(Color.GRAY);
-        g.fillRect(obstacle.getX(), obstacle.getY(), obstacle.getSize(), obstacle.getSize());
+            g.setColor(Color.WHITE);
+            Font gameOverFont = new Font("Arial", Font.BOLD, 48);
+            g.setFont(gameOverFont);
+            String gameOverText = "GAME OVER";
+            FontMetrics fm = g.getFontMetrics();
+            int gameOverX = (getWidth() - fm.stringWidth(gameOverText)) / 2;
+            g.drawString(gameOverText, gameOverX, 300);
+
+            Font scoreFont = new Font("Arial", Font.BOLD, 28);
+            g.setFont(scoreFont);
+            String scoreText = "Score: " + score;
+            fm = g.getFontMetrics();
+            int scoreX = (getWidth() - fm.stringWidth(scoreText)) / 2;
+            g.drawString(scoreText, scoreX, 370);
+
+            String highScoreText = "High Score: " + highScore;
+            fm = g.getFontMetrics();
+            int highScoreX = (getWidth() - fm.stringWidth(highScoreText)) / 2;
+            g.drawString(highScoreText, highScoreX, 420);
+        } else {
+            g.setColor(Color.RED);
+            g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
+
+            g.setColor(Color.GRAY);
+            g.fillRect(obstacle.getX(), obstacle.getY(), obstacle.getSize(), obstacle.getSize());
+
+            g.setColor(Color.WHITE);
+            Font scoreFont = new Font("Arial", Font.BOLD, 20);
+            g.setFont(scoreFont);
+            g.drawString("Score: " + score, 10, 25);
+        }
     }
 
     @Override
