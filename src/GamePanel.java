@@ -24,17 +24,20 @@ public class GamePanel extends JPanel implements KeyListener {
 
     // Progressive difficulty variables
     private int obstacleSpeed = 5;
-    private int tickCount = 0;  // counts game ticks elapsed
-    private static final int DIFFICULTY_INTERVAL = 600;  // increase difficulty every ~10 seconds
+    private int tickCount = 0;
+    private static final int DIFFICULTY_INTERVAL = 600;
 
     private Font starCrushFont;
     private ImageIcon playIcon;
     private ImageIcon homeIcon;
     private ImageIcon replayIcon;
-    private BufferedImage bgImage;  // background image for gameplay
-    private int bgY = 0;            // vertical scroll position
+    private BufferedImage bgImage;
+    private int bgY = 0;
     private static final int BG_DRAW_WIDTH = 400;
     private static final int BG_DRAW_HEIGHT = 8000;
+    private static final int CLOUD_HEIGHT = 80;  // draw height for cloud images; width scales proportionally
+    private BufferedImage[] cloudImages = new BufferedImage[5];  // cloud obstacle images
+    private int nextCloudIndex = 0;  // cycles 0–4 for each new obstacle
 
     private JButton replayButton;
     private boolean onHomeScreen = true;
@@ -42,7 +45,6 @@ public class GamePanel extends JPanel implements KeyListener {
     private JButton homeButton;
 
     public GamePanel() {
-        // Load custom font
         try {
             starCrushFont = Font.createFont(Font.TRUETYPE_FONT,
                     getClass().getResourceAsStream("/fonts/Star Crush.ttf"));
@@ -54,7 +56,6 @@ public class GamePanel extends JPanel implements KeyListener {
             starCrushFont = new Font("Arial", Font.PLAIN, 12);
         }
 
-        // Load button icons
         try {
             BufferedImage playImg = ImageIO.read(getClass().getResourceAsStream("/images/playbutton.png"));
             BufferedImage homeImg = ImageIO.read(getClass().getResourceAsStream("/images/homebutton.png"));
@@ -63,6 +64,9 @@ public class GamePanel extends JPanel implements KeyListener {
             BufferedImage replayImg = ImageIO.read(getClass().getResourceAsStream("/images/replaybutton.png"));
             replayIcon = new ImageIcon(replayImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
             bgImage = ImageIO.read(getClass().getResourceAsStream("/images/skybackground.png"));
+            for (int i = 0; i < 5; i++) {
+                cloudImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cloud" + (i + 1) + ".png"));
+            }
         } catch (IOException e) {
             playIcon = null;
             homeIcon = null;
@@ -77,7 +81,8 @@ public class GamePanel extends JPanel implements KeyListener {
         player = new Player(180, 400, 40, 400);
         obstacles = new ArrayList<Obstacle>();
         scoredObstacles = new ArrayList<Obstacle>();
-        obstacles.add(new Obstacle(400, obstacleSpeed));
+        obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+        nextCloudIndex = (nextCloudIndex + 1) % 5;
 
         gameTimer = new Timer(16, new ActionListener() {
             @Override
@@ -91,7 +96,8 @@ public class GamePanel extends JPanel implements KeyListener {
 
                 spawnTimer++;
                 if (spawnTimer >= spawnInterval) {
-                    obstacles.add(new Obstacle(400, obstacleSpeed));
+                    obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                    nextCloudIndex = (nextCloudIndex + 1) % 5;
                     spawnTimer = 0;
                 }
 
@@ -99,7 +105,7 @@ public class GamePanel extends JPanel implements KeyListener {
                     Obstacle obs = obstacles.get(i);
                     obs.move();
 
-                    if (obs.getY() + obs.getSize() < player.getY() && !scoredObstacles.contains(obs)) {
+                    if (obs.getY() + CLOUD_HEIGHT < player.getY() && !scoredObstacles.contains(obs)) {
                         score += 10;
                         scoredObstacles.add(obs);
                     }
@@ -118,7 +124,6 @@ public class GamePanel extends JPanel implements KeyListener {
                     }
                 }
 
-                // Difficulty scaling: increase every ~10 seconds
                 tickCount++;
                 if (tickCount % DIFFICULTY_INTERVAL == 0) {
                     if (spawnInterval > 10) {
@@ -129,7 +134,6 @@ public class GamePanel extends JPanel implements KeyListener {
                     }
                 }
 
-                // Scroll background upward
                 bgY -= (obstacleSpeed / 2 + 1);
                 if (bgY <= -BG_DRAW_HEIGHT) {
                     bgY = 0;
@@ -155,11 +159,13 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed));
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
+                nextCloudIndex = 0;
                 bgY = 0;
                 replayButton.setVisible(false);
                 homeButton.setVisible(false);
@@ -171,8 +177,7 @@ public class GamePanel extends JPanel implements KeyListener {
         replayButton.setBounds(100, 480, 80, 80);
         this.add(replayButton);
 
-        // Play button shown on home screen
-        playButton = new JButton("PLAY");
+        playButton = new JButton("");
         playButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
         playButton.setIcon(playIcon);
         playButton.setHorizontalTextPosition(JButton.RIGHT);
@@ -191,20 +196,21 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed));
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
+                nextCloudIndex = 0;
                 gameTimer.start();
                 requestFocusInWindow();
             }
         });
         playButton.setVisible(true);
-        playButton.setBounds(100, 430, 200, 60);
+        playButton.setBounds(160, 430, 80, 80);
         this.add(playButton);
 
-        // Home button shown on Game Over screen
         homeButton = new JButton("");
         homeButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
         homeButton.setIcon(homeIcon);
@@ -224,11 +230,13 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed));
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
+                nextCloudIndex = 0;
                 bgY = 0;
                 playButton.setVisible(true);
                 repaint();
@@ -246,12 +254,15 @@ public class GamePanel extends JPanel implements KeyListener {
 
         int obstacleX = obs.getX();
         int obstacleY = obs.getY();
-        int obstacleSize = obs.getSize();
+        int hitboxSize = obs.getHitboxSize();
+        // center the hitbox on the drawn cloud
+        int hitboxOffsetX = (obs.getSize() - hitboxSize) / 2;
+        int hitboxOffsetY = (CLOUD_HEIGHT - hitboxSize) / 2;
 
-        return playerX < obstacleX + obstacleSize &&
-                playerX + playerSize > obstacleX &&
-                playerY < obstacleY + obstacleSize &&
-                playerY + playerSize > obstacleY;
+        return playerX < obstacleX + hitboxOffsetX + hitboxSize &&
+                playerX + playerSize > obstacleX + hitboxOffsetX &&
+                playerY < obstacleY + hitboxOffsetY + hitboxSize &&
+                playerY + playerSize > obstacleY + hitboxOffsetY;
     }
 
     @Override
@@ -304,7 +315,6 @@ public class GamePanel extends JPanel implements KeyListener {
             int highScoreX = (getWidth() - fm.stringWidth(highScoreText)) / 2;
             g.drawString(highScoreText, highScoreX, 420);
         } else {
-            // Draw scrolling background
             if (bgImage != null) {
                 g.drawImage(bgImage, 0, bgY, BG_DRAW_WIDTH, BG_DRAW_HEIGHT, this);
                 g.drawImage(bgImage, 0, bgY + BG_DRAW_HEIGHT, BG_DRAW_WIDTH, BG_DRAW_HEIGHT, this);
@@ -313,10 +323,16 @@ public class GamePanel extends JPanel implements KeyListener {
             g.setColor(Color.RED);
             g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
 
-            g.setColor(Color.GRAY);
             for (int i = 0; i < obstacles.size(); i++) {
                 Obstacle obs = obstacles.get(i);
-                g.fillRect(obs.getX(), obs.getY(), obs.getSize(), obs.getSize());
+                BufferedImage cloudImg = cloudImages[obs.getImageIndex()];
+                if (cloudImg != null) {
+                    int drawWidth = cloudImg.getWidth() * CLOUD_HEIGHT / cloudImg.getHeight();
+                    g.drawImage(cloudImg, obs.getX(), obs.getY(), drawWidth, CLOUD_HEIGHT, this);
+                } else {
+                    g.setColor(Color.GRAY);
+                    g.fillRect(obs.getX(), obs.getY(), obs.getSize(), obs.getSize());
+                }
             }
 
             g.setColor(Color.WHITE);

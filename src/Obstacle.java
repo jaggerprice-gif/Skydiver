@@ -1,21 +1,19 @@
+import java.util.Random;
+
 public class Obstacle {
     private int x;
     private int y;
-    private int size;
-    private int windowWidth;
-    // Speed of the obstacle — increases with difficulty to make the game harder
+    private int size = 40;
     private int speed;
+    private int imageIndex;  // which cloud image to use (0–4)
+    private int hitboxSize = 40;  // used for collision detection, approximates visible cloud area
 
-    public Obstacle(int windowWidth, int speed) {
-        this.windowWidth = windowWidth;
-        this.size = 40;
+    public Obstacle(int windowWidth, int speed, int imageIndex) {
+        Random rand = new Random();
+        this.x = rand.nextInt(windowWidth - size);
+        this.y = 800;
         this.speed = speed;
-        respawn();
-    }
-
-    public void respawn() {
-        y = 800;
-        x = (int) (Math.random() * (windowWidth - size));
+        this.imageIndex = imageIndex;
     }
 
     public void move() {
@@ -29,4 +27,6 @@ public class Obstacle {
     public int getX() { return x; }
     public int getY() { return y; }
     public int getSize() { return size; }
+    public int getImageIndex() { return imageIndex; }
+    public int getHitboxSize() { return hitboxSize; }
 }
