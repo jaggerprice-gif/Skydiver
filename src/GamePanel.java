@@ -1,6 +1,8 @@
 import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.awt.FontFormatException;
 import java.util.ArrayList;
@@ -21,13 +23,16 @@ public class GamePanel extends JPanel implements KeyListener {
     private int spawnInterval = 60;
 
     // Progressive difficulty variables
-    private int obstacleSpeed = 5;           // Starting obstacle speed
-    private int lastDifficultyScore = 0;     // Tracks score at last difficulty increase
+    private int obstacleSpeed = 5;
+    private int lastDifficultyScore = 0;
 
     private Font starCrushFont;
+    private ImageIcon playIcon;
+    private ImageIcon homeIcon;
+    private ImageIcon replayIcon;
 
     private JButton replayButton;
-    private boolean onHomeScreen = true;     // Starts true so home screen shows on launch
+    private boolean onHomeScreen = true;
     private JButton playButton;
     private JButton homeButton;
 
@@ -42,6 +47,20 @@ public class GamePanel extends JPanel implements KeyListener {
             starCrushFont = new Font("Arial", Font.PLAIN, 12);
         } catch (IOException e) {
             starCrushFont = new Font("Arial", Font.PLAIN, 12);
+        }
+
+        // Load button icons
+        try {
+            BufferedImage playImg = ImageIO.read(getClass().getResourceAsStream("/images/playbutton.png"));
+            BufferedImage homeImg = ImageIO.read(getClass().getResourceAsStream("/images/homebutton.png"));
+            playIcon = new ImageIcon(playImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
+            homeIcon = new ImageIcon(homeImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
+            BufferedImage replayImg = ImageIO.read(getClass().getResourceAsStream("/images/replaybutton.png"));
+            replayIcon = new ImageIcon(replayImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
+        } catch (IOException e) {
+            playIcon = null;
+            homeIcon = null;
+            replayIcon = null;
         }
 
         setFocusable(true);
@@ -96,11 +115,9 @@ public class GamePanel extends JPanel implements KeyListener {
                 // Difficulty scaling: increase every 50 points
                 if (score >= lastDifficultyScore + 50) {
                     lastDifficultyScore = score;
-                    // Decrease spawn interval for more frequent obstacles (minimum 10)
                     if (spawnInterval > 10) {
                         spawnInterval -= 10;
                     }
-                    // Increase obstacle speed for faster movement (maximum 8)
                     if (obstacleSpeed < 8) {
                         obstacleSpeed++;
                     }
@@ -110,8 +127,14 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
 
-        replayButton = new JButton("Play Again");
+        replayButton = new JButton("");
         replayButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
+        replayButton.setIcon(replayIcon);
+        replayButton.setHorizontalTextPosition(JButton.RIGHT);
+        replayButton.setIconTextGap(10);
+        replayButton.setContentAreaFilled(false);
+        replayButton.setBorderPainted(false);
+        replayButton.setFocusPainted(false);
         replayButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -122,7 +145,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 scoredObstacles.clear();
                 obstacles.add(new Obstacle(400, obstacleSpeed));
                 spawnTimer = 0;
-                // Reset difficulty scaling variables
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 lastDifficultyScore = 0;
@@ -133,18 +155,23 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         replayButton.setVisible(false);
-        replayButton.setBounds(125, 480, 150, 40);
+        replayButton.setBounds(100, 480, 80, 80);
         this.add(replayButton);
 
         // Play button shown on home screen
-        playButton = new JButton("Play");
+        playButton = new JButton("PLAY");
         playButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
+        playButton.setIcon(playIcon);
+        playButton.setHorizontalTextPosition(JButton.RIGHT);
+        playButton.setIconTextGap(10);
+        playButton.setContentAreaFilled(false);
+        playButton.setBorderPainted(false);
+        playButton.setFocusPainted(false);
         playButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 onHomeScreen = false;
                 playButton.setVisible(false);
-                // Reset game state (highScore is NOT reset)
                 score = 0;
                 gameOver = false;
                 player = new Player(180, 400, 40, 400);
@@ -159,13 +186,19 @@ public class GamePanel extends JPanel implements KeyListener {
                 requestFocusInWindow();
             }
         });
-        playButton.setVisible(true); // visible immediately — home screen shows first
-        playButton.setBounds(150, 430, 100, 40);
+        playButton.setVisible(true);
+        playButton.setBounds(100, 430, 200, 60);
         this.add(playButton);
 
         // Home button shown on Game Over screen
-        homeButton = new JButton("Home");
+        homeButton = new JButton("");
         homeButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
+        homeButton.setIcon(homeIcon);
+        homeButton.setHorizontalTextPosition(JButton.RIGHT);
+        homeButton.setIconTextGap(10);
+        homeButton.setContentAreaFilled(false);
+        homeButton.setBorderPainted(false);
+        homeButton.setFocusPainted(false);
         homeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -173,7 +206,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 onHomeScreen = true;
                 homeButton.setVisible(false);
                 replayButton.setVisible(false);
-                // Reset game state so it's fresh when Play is pressed (highScore NOT reset)
                 score = 0;
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
@@ -188,7 +220,7 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         homeButton.setVisible(false);
-        homeButton.setBounds(150, 540, 100, 40);
+        homeButton.setBounds(220, 480, 80, 80);
         this.add(homeButton);
     }
 
@@ -212,11 +244,9 @@ public class GamePanel extends JPanel implements KeyListener {
         super.paintComponent(g);
 
         if (onHomeScreen) {
-            // Draw cyan background
             g.setColor(Color.CYAN);
             g.fillRect(0, 0, getWidth(), getHeight());
 
-            // Draw title
             g.setColor(Color.BLACK);
             Font titleFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
             g.setFont(titleFont);
@@ -225,15 +255,14 @@ public class GamePanel extends JPanel implements KeyListener {
             int titleX = (getWidth() - fm.stringWidth(title)) / 2;
             g.drawString(title, titleX, 300);
 
-            // Draw high score
             Font hsFont = starCrushFont.deriveFont(Font.PLAIN, 28f);
             g.setFont(hsFont);
-            String hsText = "High Score: " + highScore;
+            String hsText = "HIGH SCORE: " + highScore;
             fm = g.getFontMetrics();
             int hsX = (getWidth() - fm.stringWidth(hsText)) / 2;
             g.drawString(hsText, hsX, 370);
 
-            return; // skip the rest of paintComponent
+            return;
         }
 
         if (gameOver) {
@@ -250,12 +279,12 @@ public class GamePanel extends JPanel implements KeyListener {
 
             Font scoreFont = starCrushFont.deriveFont(Font.PLAIN, 28f);
             g.setFont(scoreFont);
-            String scoreText = "Score: " + score;
+            String scoreText = "SCORE: " + score;
             fm = g.getFontMetrics();
             int scoreX = (getWidth() - fm.stringWidth(scoreText)) / 2;
             g.drawString(scoreText, scoreX, 370);
 
-            String highScoreText = "High Score: " + highScore;
+            String highScoreText = "HIGH SCORE: " + highScore;
             fm = g.getFontMetrics();
             int highScoreX = (getWidth() - fm.stringWidth(highScoreText)) / 2;
             g.drawString(highScoreText, highScoreX, 420);
@@ -272,7 +301,7 @@ public class GamePanel extends JPanel implements KeyListener {
             g.setColor(Color.WHITE);
             Font scoreFont = starCrushFont.deriveFont(Font.PLAIN, 20f);
             g.setFont(scoreFont);
-            g.drawString("Score: " + score, 10, 25);
+            g.drawString("SCORE: " + score, 10, 25);
         }
     }
 
