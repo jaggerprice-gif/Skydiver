@@ -35,6 +35,7 @@ public class GamePanel extends JPanel implements KeyListener {
     private ImageIcon replayIcon;
     private BufferedImage bgImage;
     private int bgY = 0;
+    private BufferedImage startBgImage;
     private static final int BG_DRAW_WIDTH = 400;
     private static final int BG_DRAW_HEIGHT = 8000;
     private static final int CLOUD_HEIGHT = 80;
@@ -51,6 +52,15 @@ public class GamePanel extends JPanel implements KeyListener {
     private JButton backFromCustomizeButton;
     private JButton[] swatchButtons = new JButton[8];
     private int selectedSwatchIndex = 0;
+
+    // Cat selection
+    private BufferedImage[] catImages = new BufferedImage[6];
+    private int selectedCatIndex = 0;
+    private JButton[] catButtons = new JButton[6];
+
+    // Player draw size (separate from hitbox diameter)
+    private static final int PLAYER_DRAW_SIZE = 75;
+    private static final int CAT_DRAW_SIZE = 34;
 
     private static final Color[] SWATCH_COLORS = {
             Color.WHITE,
@@ -88,6 +98,7 @@ public class GamePanel extends JPanel implements KeyListener {
             BufferedImage replayImg = ImageIO.read(getClass().getResourceAsStream("/images/replaybutton.png"));
             replayIcon = new ImageIcon(replayImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
             bgImage = ImageIO.read(getClass().getResourceAsStream("/images/skybackground.png"));
+            startBgImage = ImageIO.read(getClass().getResourceAsStream("/images/startbackground.png"));
             for (int i = 0; i < 5; i++) {
                 cloudImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cloud" + (i + 1) + "new.png"));
             }
@@ -95,6 +106,9 @@ public class GamePanel extends JPanel implements KeyListener {
             parachuteFilling = ImageIO.read(getClass().getResourceAsStream("/images/parachutefilling.png"));
             BufferedImage customizeImg = ImageIO.read(getClass().getResourceAsStream("/images/customizebutton.png"));
             customizeIcon = new ImageIcon(customizeImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
+            for (int i = 0; i < 6; i++) {
+                catImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cat" + (i + 1) + ".png"));
+            }
         } catch (IOException e) {
             playIcon = null;
             homeIcon = null;
@@ -106,7 +120,7 @@ public class GamePanel extends JPanel implements KeyListener {
         setBackground(Color.BLACK);
         setLayout(null);
 
-        player = new Player(180, 400, 40, 360, parachuteColor);
+        player = new Player(180, 400, 45, 360, parachuteColor, selectedCatIndex);
         obstacles = new ArrayList<Obstacle>();
         scoredObstacles = new ArrayList<Obstacle>();
         int hbW = 40, hbH = 40;
@@ -194,7 +208,7 @@ public class GamePanel extends JPanel implements KeyListener {
             public void actionPerformed(ActionEvent e) {
                 score = 0;
                 gameOver = false;
-                player = new Player(180, 400, 40, 360, parachuteColor);
+                player = new Player(180, 400, 45, 360, parachuteColor, selectedCatIndex);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
@@ -237,7 +251,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 customizeButton.setVisible(false);
                 score = 0;
                 gameOver = false;
-                player = new Player(180, 400, 40, 360, parachuteColor);
+                player = new Player(180, 400, 45, 360, parachuteColor, selectedCatIndex);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
@@ -276,7 +290,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 homeButton.setVisible(false);
                 replayButton.setVisible(false);
                 score = 0;
-                player = new Player(180, 400, 40, 360, parachuteColor);
+                player = new Player(180, 400, 45, 360, parachuteColor, selectedCatIndex);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
@@ -316,6 +330,9 @@ public class GamePanel extends JPanel implements KeyListener {
                 for (int i = 0; i < swatchButtons.length; i++) {
                     swatchButtons[i].setVisible(true);
                 }
+                for (int i = 0; i < catButtons.length; i++) {
+                    catButtons[i].setVisible(true);
+                }
                 backFromCustomizeButton.setVisible(true);
                 repaint();
             }
@@ -352,8 +369,40 @@ public class GamePanel extends JPanel implements KeyListener {
                 }
             });
             swatchButtons[i].setVisible(false);
-            swatchButtons[i].setBounds(20 + i * 45, 500, 40, 40);
+            swatchButtons[i].setBounds(20 + i * 45, 430, 40, 40);
             this.add(swatchButtons[i]);
+        }
+
+        for (int i = 0; i < catButtons.length; i++) {
+            final int index = i;
+            catButtons[i] = new JButton("");
+            catButtons[i].setContentAreaFilled(false);
+            catButtons[i].setFocusPainted(false);
+            if (catImages[i] != null) {
+                catButtons[i].setIcon(new ImageIcon(catImages[i].getScaledInstance(30, 30, Image.SCALE_SMOOTH)));
+            }
+            if (i == selectedCatIndex) {
+                catButtons[i].setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
+            } else {
+                catButtons[i].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+            }
+            catButtons[i].addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    selectedCatIndex = index;
+                    for (int j = 0; j < catButtons.length; j++) {
+                        if (j == selectedCatIndex) {
+                            catButtons[j].setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
+                        } else {
+                            catButtons[j].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+                        }
+                    }
+                    repaint();
+                }
+            });
+            catButtons[i].setVisible(false);
+            catButtons[i].setBounds(35 + i * 55, 490, 40, 40);
+            this.add(catButtons[i]);
         }
 
         backFromCustomizeButton = new JButton("");
@@ -369,6 +418,9 @@ public class GamePanel extends JPanel implements KeyListener {
                 for (int i = 0; i < swatchButtons.length; i++) {
                     swatchButtons[i].setVisible(false);
                 }
+                for (int i = 0; i < catButtons.length; i++) {
+                    catButtons[i].setVisible(false);
+                }
                 backFromCustomizeButton.setVisible(false);
                 playButton.setVisible(true);
                 customizeButton.setVisible(true);
@@ -376,7 +428,7 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         backFromCustomizeButton.setVisible(false);
-        backFromCustomizeButton.setBounds(160, 580, 80, 80);
+        backFromCustomizeButton.setBounds(160, 650, 80, 80);
         this.add(backFromCustomizeButton);
     }
 
@@ -422,9 +474,10 @@ public class GamePanel extends JPanel implements KeyListener {
             int previewX = (getWidth() - 120) / 2;
             int previewY = 260;
             int previewSize = 120;
+            int previewBoxHeight = 150;
 
             g.setColor(Color.WHITE);
-            g.fillRect(previewX, previewY, previewSize, previewSize);
+            g.fillRect(previewX, previewY, previewSize, previewBoxHeight);
 
             if (parachuteFilling != null) {
                 BufferedImage tinted = new BufferedImage(previewSize, previewSize, BufferedImage.TYPE_INT_ARGB);
@@ -439,13 +492,24 @@ public class GamePanel extends JPanel implements KeyListener {
             if (parachuteOutline != null) {
                 g.drawImage(parachuteOutline, previewX, previewY, previewSize, previewSize, this);
             }
+            // Draw cat preview centered at bottom of parachute
+            if (catImages[selectedCatIndex] != null) {
+                int previewCatSize = 55;
+                int catPreviewX = previewX + (previewSize - previewCatSize) / 2 + 5;
+                int catPreviewY = previewY + previewSize - previewCatSize / 2 - 8;
+                g.drawImage(catImages[selectedCatIndex], catPreviewX, catPreviewY, previewCatSize, previewCatSize, this);
+            }
 
             return;
         }
 
         if (onHomeScreen) {
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, getWidth(), getHeight());
+            if (startBgImage != null) {
+                g.drawImage(startBgImage, 0, 0, getWidth(), getHeight(), this);
+            } else {
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
 
             g.setColor(Color.WHITE);
             Font titleFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
@@ -496,7 +560,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
             int px = player.getX();
             int py = player.getY();
-            int pd = player.getDiameter();
+            int pd = PLAYER_DRAW_SIZE;
             if (parachuteFilling != null) {
                 BufferedImage tinted = new BufferedImage(pd, pd, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D tg = tinted.createGraphics();
@@ -512,6 +576,13 @@ public class GamePanel extends JPanel implements KeyListener {
             }
             if (parachuteOutline != null) {
                 g.drawImage(parachuteOutline, px, py, pd, pd, this);
+            }
+            // Draw cat centered at bottom of parachute
+            BufferedImage catImg = catImages[player.getCatIndex()];
+            if (catImg != null) {
+                int catX = px + (pd - CAT_DRAW_SIZE) / 2 + 3;
+                int catY = py + pd - CAT_DRAW_SIZE / 2 - 8;
+                g.drawImage(catImg, catX, catY, CAT_DRAW_SIZE, CAT_DRAW_SIZE, this);
             }
 
             for (int i = 0; i < obstacles.size(); i++) {
