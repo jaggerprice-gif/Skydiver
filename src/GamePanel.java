@@ -24,12 +24,17 @@ public class GamePanel extends JPanel implements KeyListener {
 
     // Progressive difficulty variables
     private int obstacleSpeed = 5;
-    private int lastDifficultyScore = 0;
+    private int tickCount = 0;  // counts game ticks elapsed
+    private static final int DIFFICULTY_INTERVAL = 600;  // increase difficulty every ~10 seconds
 
     private Font starCrushFont;
     private ImageIcon playIcon;
     private ImageIcon homeIcon;
     private ImageIcon replayIcon;
+    private BufferedImage bgImage;  // background image for gameplay
+    private int bgY = 0;            // vertical scroll position
+    private static final int BG_DRAW_WIDTH = 400;
+    private static final int BG_DRAW_HEIGHT = 8000;
 
     private JButton replayButton;
     private boolean onHomeScreen = true;
@@ -57,6 +62,7 @@ public class GamePanel extends JPanel implements KeyListener {
             homeIcon = new ImageIcon(homeImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
             BufferedImage replayImg = ImageIO.read(getClass().getResourceAsStream("/images/replaybutton.png"));
             replayIcon = new ImageIcon(replayImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
+            bgImage = ImageIO.read(getClass().getResourceAsStream("/images/skybackground.png"));
         } catch (IOException e) {
             playIcon = null;
             homeIcon = null;
@@ -65,7 +71,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
         setFocusable(true);
         addKeyListener(this);
-        setBackground(Color.CYAN);
+        setBackground(Color.BLACK);
         setLayout(null);
 
         player = new Player(180, 400, 40, 400);
@@ -112,15 +118,21 @@ public class GamePanel extends JPanel implements KeyListener {
                     }
                 }
 
-                // Difficulty scaling: increase every 50 points
-                if (score >= lastDifficultyScore + 50) {
-                    lastDifficultyScore = score;
+                // Difficulty scaling: increase every ~10 seconds
+                tickCount++;
+                if (tickCount % DIFFICULTY_INTERVAL == 0) {
                     if (spawnInterval > 10) {
                         spawnInterval -= 10;
                     }
                     if (obstacleSpeed < 8) {
                         obstacleSpeed++;
                     }
+                }
+
+                // Scroll background upward
+                bgY -= (obstacleSpeed / 2 + 1);
+                if (bgY <= -BG_DRAW_HEIGHT) {
+                    bgY = 0;
                 }
 
                 repaint();
@@ -147,7 +159,8 @@ public class GamePanel extends JPanel implements KeyListener {
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
-                lastDifficultyScore = 0;
+                tickCount = 0;
+                bgY = 0;
                 replayButton.setVisible(false);
                 homeButton.setVisible(false);
                 gameTimer.start();
@@ -167,6 +180,7 @@ public class GamePanel extends JPanel implements KeyListener {
         playButton.setContentAreaFilled(false);
         playButton.setBorderPainted(false);
         playButton.setFocusPainted(false);
+        playButton.setForeground(Color.WHITE);
         playButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -181,7 +195,7 @@ public class GamePanel extends JPanel implements KeyListener {
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
-                lastDifficultyScore = 0;
+                tickCount = 0;
                 gameTimer.start();
                 requestFocusInWindow();
             }
@@ -214,7 +228,8 @@ public class GamePanel extends JPanel implements KeyListener {
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
-                lastDifficultyScore = 0;
+                tickCount = 0;
+                bgY = 0;
                 playButton.setVisible(true);
                 repaint();
             }
@@ -244,10 +259,10 @@ public class GamePanel extends JPanel implements KeyListener {
         super.paintComponent(g);
 
         if (onHomeScreen) {
-            g.setColor(Color.CYAN);
+            g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
 
-            g.setColor(Color.BLACK);
+            g.setColor(Color.WHITE);
             Font titleFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
             g.setFont(titleFont);
             String title = "Skydiver";
@@ -289,6 +304,12 @@ public class GamePanel extends JPanel implements KeyListener {
             int highScoreX = (getWidth() - fm.stringWidth(highScoreText)) / 2;
             g.drawString(highScoreText, highScoreX, 420);
         } else {
+            // Draw scrolling background
+            if (bgImage != null) {
+                g.drawImage(bgImage, 0, bgY, BG_DRAW_WIDTH, BG_DRAW_HEIGHT, this);
+                g.drawImage(bgImage, 0, bgY + BG_DRAW_HEIGHT, BG_DRAW_WIDTH, BG_DRAW_HEIGHT, this);
+            }
+
             g.setColor(Color.RED);
             g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
 
