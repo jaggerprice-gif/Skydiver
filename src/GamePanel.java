@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.awt.FontFormatException;
 import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements KeyListener {
@@ -22,15 +24,30 @@ public class GamePanel extends JPanel implements KeyListener {
     private int obstacleSpeed = 5;           // Starting obstacle speed
     private int lastDifficultyScore = 0;     // Tracks score at last difficulty increase
 
+    private Font starCrushFont;
+
     private JButton replayButton;
     private boolean onHomeScreen = true;     // Starts true so home screen shows on launch
     private JButton playButton;
     private JButton homeButton;
 
     public GamePanel() {
+        // Load custom font
+        try {
+            starCrushFont = Font.createFont(Font.TRUETYPE_FONT,
+                    getClass().getResourceAsStream("/fonts/Star Crush.ttf"));
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(starCrushFont);
+        } catch (FontFormatException e) {
+            starCrushFont = new Font("Arial", Font.PLAIN, 12);
+        } catch (IOException e) {
+            starCrushFont = new Font("Arial", Font.PLAIN, 12);
+        }
+
         setFocusable(true);
         addKeyListener(this);
         setBackground(Color.CYAN);
+        setLayout(null);
 
         player = new Player(180, 400, 40, 400);
         obstacles = new ArrayList<Obstacle>();
@@ -94,7 +111,7 @@ public class GamePanel extends JPanel implements KeyListener {
         });
 
         replayButton = new JButton("Play Again");
-        replayButton.setFont(new Font("Arial", Font.BOLD, 20));
+        replayButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
         replayButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -110,16 +127,18 @@ public class GamePanel extends JPanel implements KeyListener {
                 spawnInterval = 60;
                 lastDifficultyScore = 0;
                 replayButton.setVisible(false);
+                homeButton.setVisible(false);
                 gameTimer.start();
                 requestFocusInWindow();
             }
         });
         replayButton.setVisible(false);
+        replayButton.setBounds(125, 480, 150, 40);
         this.add(replayButton);
 
         // Play button shown on home screen
         playButton = new JButton("Play");
-        playButton.setFont(new Font("Arial", Font.BOLD, 20));
+        playButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
         playButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -141,11 +160,12 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         playButton.setVisible(true); // visible immediately — home screen shows first
+        playButton.setBounds(150, 430, 100, 40);
         this.add(playButton);
 
         // Home button shown on Game Over screen
         homeButton = new JButton("Home");
-        homeButton.setFont(new Font("Arial", Font.BOLD, 20));
+        homeButton.setFont(starCrushFont.deriveFont(Font.PLAIN, 20f));
         homeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -168,6 +188,7 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         homeButton.setVisible(false);
+        homeButton.setBounds(150, 540, 100, 40);
         this.add(homeButton);
     }
 
@@ -197,7 +218,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
             // Draw title
             g.setColor(Color.BLACK);
-            Font titleFont = new Font("Arial", Font.BOLD, 48);
+            Font titleFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
             g.setFont(titleFont);
             String title = "Skydiver";
             FontMetrics fm = g.getFontMetrics();
@@ -205,7 +226,7 @@ public class GamePanel extends JPanel implements KeyListener {
             g.drawString(title, titleX, 300);
 
             // Draw high score
-            Font hsFont = new Font("Arial", Font.BOLD, 28);
+            Font hsFont = starCrushFont.deriveFont(Font.PLAIN, 28f);
             g.setFont(hsFont);
             String hsText = "High Score: " + highScore;
             fm = g.getFontMetrics();
@@ -220,14 +241,14 @@ public class GamePanel extends JPanel implements KeyListener {
             g.fillRect(0, 0, getWidth(), getHeight());
 
             g.setColor(Color.WHITE);
-            Font gameOverFont = new Font("Arial", Font.BOLD, 48);
+            Font gameOverFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
             g.setFont(gameOverFont);
             String gameOverText = "GAME OVER";
             FontMetrics fm = g.getFontMetrics();
             int gameOverX = (getWidth() - fm.stringWidth(gameOverText)) / 2;
             g.drawString(gameOverText, gameOverX, 300);
 
-            Font scoreFont = new Font("Arial", Font.BOLD, 28);
+            Font scoreFont = starCrushFont.deriveFont(Font.PLAIN, 28f);
             g.setFont(scoreFont);
             String scoreText = "Score: " + score;
             fm = g.getFontMetrics();
@@ -249,7 +270,7 @@ public class GamePanel extends JPanel implements KeyListener {
             }
 
             g.setColor(Color.WHITE);
-            Font scoreFont = new Font("Arial", Font.BOLD, 20);
+            Font scoreFont = starCrushFont.deriveFont(Font.PLAIN, 20f);
             g.setFont(scoreFont);
             g.drawString("Score: " + score, 10, 25);
         }
