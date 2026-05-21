@@ -65,7 +65,7 @@ public class GamePanel extends JPanel implements KeyListener {
             replayIcon = new ImageIcon(replayImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
             bgImage = ImageIO.read(getClass().getResourceAsStream("/images/skybackground.png"));
             for (int i = 0; i < 5; i++) {
-                cloudImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cloud" + (i + 1) + ".png"));
+                cloudImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cloud" + (i + 1) + "new.png"));
             }
         } catch (IOException e) {
             playIcon = null;
@@ -81,7 +81,12 @@ public class GamePanel extends JPanel implements KeyListener {
         player = new Player(180, 400, 40, 400);
         obstacles = new ArrayList<Obstacle>();
         scoredObstacles = new ArrayList<Obstacle>();
-        obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+        int hbW = 40, hbH = 40;  // fallback
+        if (cloudImages[nextCloudIndex] != null) {
+            hbH = CLOUD_HEIGHT;
+            hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
+        }
+        obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex, hbW, hbH));
         nextCloudIndex = (nextCloudIndex + 1) % 5;
 
         gameTimer = new Timer(16, new ActionListener() {
@@ -96,7 +101,12 @@ public class GamePanel extends JPanel implements KeyListener {
 
                 spawnTimer++;
                 if (spawnTimer >= spawnInterval) {
-                    obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                    int hbW = 40, hbH = 40;  // fallback
+                    if (cloudImages[nextCloudIndex] != null) {
+                        hbH = CLOUD_HEIGHT;
+                        hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
+                    }
+                    obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex, hbW, hbH));
                     nextCloudIndex = (nextCloudIndex + 1) % 5;
                     spawnTimer = 0;
                 }
@@ -159,13 +169,18 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = 0;
+                int hbW = 40, hbH = 40;  // fallback
+                if (cloudImages[nextCloudIndex] != null) {
+                    hbH = CLOUD_HEIGHT;
+                    hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
+                }
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex, hbW, hbH));
                 nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
-                nextCloudIndex = 0;
                 bgY = 0;
                 replayButton.setVisible(false);
                 homeButton.setVisible(false);
@@ -196,13 +211,18 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = 0;
+                int hbW = 40, hbH = 40;  // fallback
+                if (cloudImages[nextCloudIndex] != null) {
+                    hbH = CLOUD_HEIGHT;
+                    hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
+                }
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex, hbW, hbH));
                 nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
-                nextCloudIndex = 0;
                 gameTimer.start();
                 requestFocusInWindow();
             }
@@ -230,13 +250,18 @@ public class GamePanel extends JPanel implements KeyListener {
                 player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex));
+                nextCloudIndex = 0;
+                int hbW = 40, hbH = 40;  // fallback
+                if (cloudImages[nextCloudIndex] != null) {
+                    hbH = CLOUD_HEIGHT;
+                    hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
+                }
+                obstacles.add(new Obstacle(400, obstacleSpeed, nextCloudIndex, hbW, hbH));
                 nextCloudIndex = (nextCloudIndex + 1) % 5;
                 spawnTimer = 0;
                 obstacleSpeed = 5;
                 spawnInterval = 60;
                 tickCount = 0;
-                nextCloudIndex = 0;
                 bgY = 0;
                 playButton.setVisible(true);
                 repaint();
@@ -254,15 +279,13 @@ public class GamePanel extends JPanel implements KeyListener {
 
         int obstacleX = obs.getX();
         int obstacleY = obs.getY();
-        int hitboxSize = obs.getHitboxSize();
-        // center the hitbox on the drawn cloud
-        int hitboxOffsetX = (obs.getSize() - hitboxSize) / 2;
-        int hitboxOffsetY = (CLOUD_HEIGHT - hitboxSize) / 2;
+        int hitboxWidth = obs.getHitboxWidth();
+        int hitboxHeight = obs.getHitboxHeight();
 
-        return playerX < obstacleX + hitboxOffsetX + hitboxSize &&
-                playerX + playerSize > obstacleX + hitboxOffsetX &&
-                playerY < obstacleY + hitboxOffsetY + hitboxSize &&
-                playerY + playerSize > obstacleY + hitboxOffsetY;
+        return playerX < obstacleX + hitboxWidth &&
+                playerX + playerSize > obstacleX &&
+                playerY < obstacleY + hitboxHeight &&
+                playerY + playerSize > obstacleY;
     }
 
     @Override
