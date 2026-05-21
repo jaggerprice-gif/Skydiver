@@ -1,24 +1,15 @@
-import javax.swing.JFrame;
+import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        // Create a new JFrame window
-        JFrame frame = new JFrame("Skydiving Game - Version 1");
-
-        // Set the window size
-        frame.setSize(600, 800);
-
-        // Close the program when the window is closed
+        JFrame frame = new JFrame("Skydiving Game");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 800);
+        frame.add(new GamePanel());
 
-        // Create the game panel and add it to the frame
-        GamePanel gamePanel = new GamePanel();
-        frame.add(gamePanel);
+        // Prevent window from being resized
+        frame.setResizable(false);
 
-        // Set focus to the game panel so it receives key events
-        gamePanel.setFocusable(true);
-
-        // Display the window
         frame.setVisible(true);
     }
 }

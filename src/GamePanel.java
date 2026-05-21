@@ -1,55 +1,69 @@
-import javax.swing.JPanel;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
 public class GamePanel extends JPanel implements KeyListener {
     private Player player;
-    private int windowWidth = 600;
-    private int windowHeight = 800;
 
-    // Constructor: initialize the game panel and player
+    // Booleans to track key states for smooth movement
+    private boolean movingLeft = false;
+    private boolean movingRight = false;
+
     public GamePanel() {
-        // Initialize the player: centered horizontally, positioned 3/4 down the screen
-        // Player diameter is 40 pixels, so starting x is (600 - 40) / 2 = 280
-        player = new Player(280, 600, 40, windowWidth);
-
-        // Add this panel as a key listener to receive key events
+        setFocusable(true);
         addKeyListener(this);
+        setBackground(Color.CYAN);
+
+        // Initialize player at starting position (y = 200, which is 1/4 from top of 800px window)
+        player = new Player(180, 200, 40, 400);
+
+        // Timer for smooth movement at ~60fps (fires every 16ms)
+        // Uses anonymous ActionListener class for AP CSA compatibility
+        Timer gameTimer = new Timer(16, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Check movement booleans and update player position
+                if (movingLeft) {
+                    player.move(-5);
+                }
+                if (movingRight) {
+                    player.move(5);
+                }
+                repaint();
+            }
+        });
+        gameTimer.start();
     }
 
-    // paintComponent: called whenever the panel needs to be redrawn
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
-        // Set background color to light blue (sky)
-        setBackground(new Color(135, 206, 235));
-
-        // Draw the player as a filled circle
-        g.setColor(new Color(255, 0, 0)); // Red circle
+        g.setColor(Color.RED);
         g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
     }
 
-    // Called when a key is pressed
+    @Override
     public void keyPressed(KeyEvent e) {
-        // Move left on left arrow key
         if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-            player.move(-5);
-            repaint();
+            movingLeft = true;
         }
-        // Move right on right arrow key
-        else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-            player.move(5);
-            repaint();
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            movingRight = true;
         }
     }
 
-    // Called when a key is released (not needed for this version)
+    @Override
     public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+            movingLeft = false;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            movingRight = false;
+        }
     }
 
-    // Called when a key is typed (not needed for this version)
+    @Override
     public void keyTyped(KeyEvent e) {
+        // Not used
     }
 }
