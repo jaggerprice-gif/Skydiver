@@ -5,6 +5,8 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.awt.FontFormatException;
+import java.awt.Graphics2D;
+import java.awt.AlphaComposite;
 import java.util.ArrayList;
 
 public class GamePanel extends JPanel implements KeyListener {
@@ -35,9 +37,31 @@ public class GamePanel extends JPanel implements KeyListener {
     private int bgY = 0;
     private static final int BG_DRAW_WIDTH = 400;
     private static final int BG_DRAW_HEIGHT = 8000;
-    private static final int CLOUD_HEIGHT = 80;  // draw height for cloud images; width scales proportionally
-    private BufferedImage[] cloudImages = new BufferedImage[5];  // cloud obstacle images
-    private int nextCloudIndex = 0;  // cycles 0–4 for each new obstacle
+    private static final int CLOUD_HEIGHT = 80;
+    private BufferedImage[] cloudImages = new BufferedImage[5];
+    private int nextCloudIndex = 0;
+
+    // Customization screen
+    private boolean onCustomizeScreen = false;
+    private Color parachuteColor = Color.WHITE;
+    private BufferedImage parachuteOutline;
+    private BufferedImage parachuteFilling;
+    private ImageIcon customizeIcon;
+    private JButton customizeButton;
+    private JButton backFromCustomizeButton;
+    private JButton[] swatchButtons = new JButton[8];
+    private int selectedSwatchIndex = 0;
+
+    private static final Color[] SWATCH_COLORS = {
+            Color.WHITE,
+            Color.getHSBColor(0f,    0.4f, 1f),
+            Color.getHSBColor(0.08f, 0.4f, 1f),
+            Color.getHSBColor(0.17f, 0.4f, 1f),
+            Color.getHSBColor(0.33f, 0.4f, 1f),
+            Color.getHSBColor(0.58f, 0.4f, 1f),
+            Color.getHSBColor(0.69f, 0.4f, 1f),
+            Color.getHSBColor(0.79f, 0.4f, 1f)
+    };
 
     private JButton replayButton;
     private boolean onHomeScreen = true;
@@ -67,6 +91,10 @@ public class GamePanel extends JPanel implements KeyListener {
             for (int i = 0; i < 5; i++) {
                 cloudImages[i] = ImageIO.read(getClass().getResourceAsStream("/images/cloud" + (i + 1) + "new.png"));
             }
+            parachuteOutline = ImageIO.read(getClass().getResourceAsStream("/images/parachuteoutline.png"));
+            parachuteFilling = ImageIO.read(getClass().getResourceAsStream("/images/parachutefilling.png"));
+            BufferedImage customizeImg = ImageIO.read(getClass().getResourceAsStream("/images/customizebutton.png"));
+            customizeIcon = new ImageIcon(customizeImg.getScaledInstance(60, 60, Image.SCALE_SMOOTH));
         } catch (IOException e) {
             playIcon = null;
             homeIcon = null;
@@ -78,10 +106,10 @@ public class GamePanel extends JPanel implements KeyListener {
         setBackground(Color.BLACK);
         setLayout(null);
 
-        player = new Player(180, 400, 40, 400);
+        player = new Player(180, 400, 40, 360, parachuteColor);
         obstacles = new ArrayList<Obstacle>();
         scoredObstacles = new ArrayList<Obstacle>();
-        int hbW = 40, hbH = 40;  // fallback
+        int hbW = 40, hbH = 40;
         if (cloudImages[nextCloudIndex] != null) {
             hbH = CLOUD_HEIGHT;
             hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
@@ -101,7 +129,7 @@ public class GamePanel extends JPanel implements KeyListener {
 
                 spawnTimer++;
                 if (spawnTimer >= spawnInterval) {
-                    int hbW = 40, hbH = 40;  // fallback
+                    int hbW = 40, hbH = 40;
                     if (cloudImages[nextCloudIndex] != null) {
                         hbH = CLOUD_HEIGHT;
                         hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
@@ -166,11 +194,11 @@ public class GamePanel extends JPanel implements KeyListener {
             public void actionPerformed(ActionEvent e) {
                 score = 0;
                 gameOver = false;
-                player = new Player(180, 400, 40, 400);
+                player = new Player(180, 400, 40, 360, parachuteColor);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
-                int hbW = 40, hbH = 40;  // fallback
+                int hbW = 40, hbH = 40;
                 if (cloudImages[nextCloudIndex] != null) {
                     hbH = CLOUD_HEIGHT;
                     hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
@@ -206,13 +234,14 @@ public class GamePanel extends JPanel implements KeyListener {
             public void actionPerformed(ActionEvent e) {
                 onHomeScreen = false;
                 playButton.setVisible(false);
+                customizeButton.setVisible(false);
                 score = 0;
                 gameOver = false;
-                player = new Player(180, 400, 40, 400);
+                player = new Player(180, 400, 40, 360, parachuteColor);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
-                int hbW = 40, hbH = 40;  // fallback
+                int hbW = 40, hbH = 40;
                 if (cloudImages[nextCloudIndex] != null) {
                     hbH = CLOUD_HEIGHT;
                     hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
@@ -228,7 +257,7 @@ public class GamePanel extends JPanel implements KeyListener {
             }
         });
         playButton.setVisible(true);
-        playButton.setBounds(160, 430, 80, 80);
+        playButton.setBounds(120, 420, 80, 80);
         this.add(playButton);
 
         homeButton = new JButton("");
@@ -247,11 +276,11 @@ public class GamePanel extends JPanel implements KeyListener {
                 homeButton.setVisible(false);
                 replayButton.setVisible(false);
                 score = 0;
-                player = new Player(180, 400, 40, 400);
+                player = new Player(180, 400, 40, 360, parachuteColor);
                 obstacles.clear();
                 scoredObstacles.clear();
                 nextCloudIndex = 0;
-                int hbW = 40, hbH = 40;  // fallback
+                int hbW = 40, hbH = 40;
                 if (cloudImages[nextCloudIndex] != null) {
                     hbH = CLOUD_HEIGHT;
                     hbW = cloudImages[nextCloudIndex].getWidth() * CLOUD_HEIGHT / cloudImages[nextCloudIndex].getHeight();
@@ -264,12 +293,91 @@ public class GamePanel extends JPanel implements KeyListener {
                 tickCount = 0;
                 bgY = 0;
                 playButton.setVisible(true);
+                customizeButton.setVisible(true);
                 repaint();
             }
         });
         homeButton.setVisible(false);
         homeButton.setBounds(220, 480, 80, 80);
         this.add(homeButton);
+
+        customizeButton = new JButton("");
+        customizeButton.setIcon(customizeIcon);
+        customizeButton.setContentAreaFilled(false);
+        customizeButton.setBorderPainted(false);
+        customizeButton.setFocusPainted(false);
+        customizeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onHomeScreen = false;
+                onCustomizeScreen = true;
+                playButton.setVisible(false);
+                customizeButton.setVisible(false);
+                for (int i = 0; i < swatchButtons.length; i++) {
+                    swatchButtons[i].setVisible(true);
+                }
+                backFromCustomizeButton.setVisible(true);
+                repaint();
+            }
+        });
+        customizeButton.setVisible(true);
+        customizeButton.setBounds(220, 420, 80, 80);
+        this.add(customizeButton);
+
+        for (int i = 0; i < swatchButtons.length; i++) {
+            final int index = i;
+            swatchButtons[i] = new JButton("");
+            swatchButtons[i].setBackground(SWATCH_COLORS[i]);
+            swatchButtons[i].setOpaque(true);
+            swatchButtons[i].setContentAreaFilled(true);
+            swatchButtons[i].setFocusPainted(false);
+            if (i == selectedSwatchIndex) {
+                swatchButtons[i].setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
+            } else {
+                swatchButtons[i].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+            }
+            swatchButtons[i].addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    parachuteColor = SWATCH_COLORS[index];
+                    selectedSwatchIndex = index;
+                    for (int j = 0; j < swatchButtons.length; j++) {
+                        if (j == selectedSwatchIndex) {
+                            swatchButtons[j].setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
+                        } else {
+                            swatchButtons[j].setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+                        }
+                    }
+                    repaint();
+                }
+            });
+            swatchButtons[i].setVisible(false);
+            swatchButtons[i].setBounds(20 + i * 45, 500, 40, 40);
+            this.add(swatchButtons[i]);
+        }
+
+        backFromCustomizeButton = new JButton("");
+        backFromCustomizeButton.setIcon(homeIcon);
+        backFromCustomizeButton.setContentAreaFilled(false);
+        backFromCustomizeButton.setBorderPainted(false);
+        backFromCustomizeButton.setFocusPainted(false);
+        backFromCustomizeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onCustomizeScreen = false;
+                onHomeScreen = true;
+                for (int i = 0; i < swatchButtons.length; i++) {
+                    swatchButtons[i].setVisible(false);
+                }
+                backFromCustomizeButton.setVisible(false);
+                playButton.setVisible(true);
+                customizeButton.setVisible(true);
+                repaint();
+            }
+        });
+        backFromCustomizeButton.setVisible(false);
+        backFromCustomizeButton.setBounds(160, 580, 80, 80);
+        this.add(backFromCustomizeButton);
     }
 
     private boolean collides(Obstacle obs) {
@@ -291,6 +399,49 @@ public class GamePanel extends JPanel implements KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        if (onCustomizeScreen) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            g.setColor(Color.WHITE);
+            Font titleFont = starCrushFont.deriveFont(Font.PLAIN, 48f);
+            g.setFont(titleFont);
+            String title = "CUSTOMIZE";
+            FontMetrics fm = g.getFontMetrics();
+            int titleX = (getWidth() - fm.stringWidth(title)) / 2;
+            g.drawString(title, titleX, 150);
+
+            Font labelFont = starCrushFont.deriveFont(Font.PLAIN, 20f);
+            g.setFont(labelFont);
+            String label = "PREVIEW";
+            fm = g.getFontMetrics();
+            int labelX = (getWidth() - fm.stringWidth(label)) / 2;
+            g.drawString(label, labelX, 230);
+
+            int previewX = (getWidth() - 120) / 2;
+            int previewY = 260;
+            int previewSize = 120;
+
+            g.setColor(Color.WHITE);
+            g.fillRect(previewX, previewY, previewSize, previewSize);
+
+            if (parachuteFilling != null) {
+                BufferedImage tinted = new BufferedImage(previewSize, previewSize, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D tg = tinted.createGraphics();
+                tg.drawImage(parachuteFilling, 0, 0, previewSize, previewSize, null);
+                tg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP));
+                tg.setColor(parachuteColor);
+                tg.fillRect(0, 0, previewSize, previewSize);
+                tg.dispose();
+                g.drawImage(tinted, previewX, previewY, null);
+            }
+            if (parachuteOutline != null) {
+                g.drawImage(parachuteOutline, previewX, previewY, previewSize, previewSize, this);
+            }
+
+            return;
+        }
 
         if (onHomeScreen) {
             g.setColor(Color.BLACK);
@@ -343,8 +494,25 @@ public class GamePanel extends JPanel implements KeyListener {
                 g.drawImage(bgImage, 0, bgY + BG_DRAW_HEIGHT, BG_DRAW_WIDTH, BG_DRAW_HEIGHT, this);
             }
 
-            g.setColor(Color.RED);
-            g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
+            int px = player.getX();
+            int py = player.getY();
+            int pd = player.getDiameter();
+            if (parachuteFilling != null) {
+                BufferedImage tinted = new BufferedImage(pd, pd, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D tg = tinted.createGraphics();
+                tg.drawImage(parachuteFilling, 0, 0, pd, pd, null);
+                tg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP));
+                tg.setColor(player.getParachuteColor());
+                tg.fillRect(0, 0, pd, pd);
+                tg.dispose();
+                g.drawImage(tinted, px, py, null);
+            } else {
+                g.setColor(Color.RED);
+                g.fillOval(px, py, pd, pd);
+            }
+            if (parachuteOutline != null) {
+                g.drawImage(parachuteOutline, px, py, pd, pd, this);
+            }
 
             for (int i = 0; i < obstacles.size(); i++) {
                 Obstacle obs = obstacles.get(i);
