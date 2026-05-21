@@ -23,6 +23,9 @@ public class GamePanel extends JPanel implements KeyListener {
     private int lastDifficultyScore = 0;     // Tracks score at last difficulty increase
 
     private JButton replayButton;
+    private boolean onHomeScreen = true;     // Starts true so home screen shows on launch
+    private JButton playButton;
+    private JButton homeButton;
 
     public GamePanel() {
         setFocusable(true);
@@ -68,6 +71,7 @@ public class GamePanel extends JPanel implements KeyListener {
                         }
                         gameOver = true;
                         replayButton.setVisible(true);
+                        homeButton.setVisible(true);
                         gameTimer.stop();
                     }
                 }
@@ -88,7 +92,6 @@ public class GamePanel extends JPanel implements KeyListener {
                 repaint();
             }
         });
-        gameTimer.start();
 
         replayButton = new JButton("Play Again");
         replayButton.setFont(new Font("Arial", Font.BOLD, 20));
@@ -113,6 +116,59 @@ public class GamePanel extends JPanel implements KeyListener {
         });
         replayButton.setVisible(false);
         this.add(replayButton);
+
+        // Play button shown on home screen
+        playButton = new JButton("Play");
+        playButton.setFont(new Font("Arial", Font.BOLD, 20));
+        playButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onHomeScreen = false;
+                playButton.setVisible(false);
+                // Reset game state (highScore is NOT reset)
+                score = 0;
+                gameOver = false;
+                player = new Player(180, 400, 40, 400);
+                obstacles.clear();
+                scoredObstacles.clear();
+                obstacles.add(new Obstacle(400, obstacleSpeed));
+                spawnTimer = 0;
+                obstacleSpeed = 5;
+                spawnInterval = 60;
+                lastDifficultyScore = 0;
+                gameTimer.start();
+                requestFocusInWindow();
+            }
+        });
+        playButton.setVisible(true); // visible immediately — home screen shows first
+        this.add(playButton);
+
+        // Home button shown on Game Over screen
+        homeButton = new JButton("Home");
+        homeButton.setFont(new Font("Arial", Font.BOLD, 20));
+        homeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gameOver = false;
+                onHomeScreen = true;
+                homeButton.setVisible(false);
+                replayButton.setVisible(false);
+                // Reset game state so it's fresh when Play is pressed (highScore NOT reset)
+                score = 0;
+                player = new Player(180, 400, 40, 400);
+                obstacles.clear();
+                scoredObstacles.clear();
+                obstacles.add(new Obstacle(400, obstacleSpeed));
+                spawnTimer = 0;
+                obstacleSpeed = 5;
+                spawnInterval = 60;
+                lastDifficultyScore = 0;
+                playButton.setVisible(true);
+                repaint();
+            }
+        });
+        homeButton.setVisible(false);
+        this.add(homeButton);
     }
 
     private boolean collides(Obstacle obs) {
@@ -133,6 +189,31 @@ public class GamePanel extends JPanel implements KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        if (onHomeScreen) {
+            // Draw cyan background
+            g.setColor(Color.CYAN);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            // Draw title
+            g.setColor(Color.BLACK);
+            Font titleFont = new Font("Arial", Font.BOLD, 48);
+            g.setFont(titleFont);
+            String title = "Skydiver";
+            FontMetrics fm = g.getFontMetrics();
+            int titleX = (getWidth() - fm.stringWidth(title)) / 2;
+            g.drawString(title, titleX, 300);
+
+            // Draw high score
+            Font hsFont = new Font("Arial", Font.BOLD, 28);
+            g.setFont(hsFont);
+            String hsText = "High Score: " + highScore;
+            fm = g.getFontMetrics();
+            int hsX = (getWidth() - fm.stringWidth(hsText)) / 2;
+            g.drawString(hsText, hsX, 370);
+
+            return; // skip the rest of paintComponent
+        }
 
         if (gameOver) {
             g.setColor(Color.BLACK);
