@@ -15,9 +15,12 @@ public class GamePanel extends JPanel implements KeyListener {
     private int highScore = 0;
     private boolean gameOver = false;
 
-    // Spawn timer manages when new obstacles are added to the game
     private int spawnTimer = 0;
-    private final int SPAWN_INTERVAL = 120; // New obstacle spawns every ~2 seconds (120 ticks at 60 FPS)
+    private int spawnInterval = 60;
+
+    // Progressive difficulty variables
+    private int obstacleSpeed = 5;           // Starting obstacle speed
+    private int lastDifficultyScore = 0;     // Tracks score at last difficulty increase
 
     private JButton replayButton;
 
@@ -26,11 +29,10 @@ public class GamePanel extends JPanel implements KeyListener {
         addKeyListener(this);
         setBackground(Color.CYAN);
 
-        player = new Player(180, 200, 40, 400);
+        player = new Player(180, 400, 40, 400);
         obstacles = new ArrayList<Obstacle>();
         scoredObstacles = new ArrayList<Obstacle>();
-        // Add first obstacle so screen isn't empty at start
-        obstacles.add(new Obstacle(400));
+        obstacles.add(new Obstacle(400, obstacleSpeed));
 
         gameTimer = new Timer(16, new ActionListener() {
             @Override
@@ -42,36 +44,44 @@ public class GamePanel extends JPanel implements KeyListener {
                     player.move(5);
                 }
 
-                // Increment spawn timer and add new obstacle at regular intervals
                 spawnTimer++;
-                if (spawnTimer >= SPAWN_INTERVAL) {
-                    obstacles.add(new Obstacle(400));
+                if (spawnTimer >= spawnInterval) {
+                    obstacles.add(new Obstacle(400, obstacleSpeed));
                     spawnTimer = 0;
                 }
 
-                // Process all obstacles (iterate backwards for safe removal)
                 for (int i = obstacles.size() - 1; i >= 0; i--) {
                     Obstacle obs = obstacles.get(i);
                     obs.move();
 
-                    // Award points when obstacle passes player (without re-scoring same obstacle)
                     if (obs.getY() + obs.getSize() < player.getY() && !scoredObstacles.contains(obs)) {
                         score += 10;
                         scoredObstacles.add(obs);
                     }
 
-                    // Remove obstacle if it goes off screen
                     if (obs.isOffScreen()) {
                         obstacles.remove(i);
                         scoredObstacles.remove(obs);
                     } else if (collides(obs)) {
-                        // Check collision with remaining obstacles
                         if (score > highScore) {
                             highScore = score;
                         }
                         gameOver = true;
                         replayButton.setVisible(true);
                         gameTimer.stop();
+                    }
+                }
+
+                // Difficulty scaling: increase every 50 points
+                if (score >= lastDifficultyScore + 50) {
+                    lastDifficultyScore = score;
+                    // Decrease spawn interval for more frequent obstacles (minimum 10)
+                    if (spawnInterval > 10) {
+                        spawnInterval -= 10;
+                    }
+                    // Increase obstacle speed for faster movement (maximum 8)
+                    if (obstacleSpeed < 8) {
+                        obstacleSpeed++;
                     }
                 }
 
@@ -87,11 +97,15 @@ public class GamePanel extends JPanel implements KeyListener {
             public void actionPerformed(ActionEvent e) {
                 score = 0;
                 gameOver = false;
-                player = new Player(180, 200, 40, 400);
+                player = new Player(180, 400, 40, 400);
                 obstacles.clear();
                 scoredObstacles.clear();
-                obstacles.add(new Obstacle(400));
+                obstacles.add(new Obstacle(400, obstacleSpeed));
                 spawnTimer = 0;
+                // Reset difficulty scaling variables
+                obstacleSpeed = 5;
+                spawnInterval = 60;
+                lastDifficultyScore = 0;
                 replayButton.setVisible(false);
                 gameTimer.start();
                 requestFocusInWindow();
@@ -147,7 +161,6 @@ public class GamePanel extends JPanel implements KeyListener {
             g.setColor(Color.RED);
             g.fillOval(player.getX(), player.getY(), player.getDiameter(), player.getDiameter());
 
-            // Draw all obstacles in the ArrayList
             g.setColor(Color.GRAY);
             for (int i = 0; i < obstacles.size(); i++) {
                 Obstacle obs = obstacles.get(i);

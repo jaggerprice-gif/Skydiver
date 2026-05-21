@@ -3,40 +3,30 @@ public class Obstacle {
     private int y;
     private int size;
     private int windowWidth;
+    // Speed of the obstacle — increases with difficulty to make the game harder
+    private int speed;
 
-    // Constructor: initializes obstacle with given window width and sets initial position
-    public Obstacle(int windowWidth) {
+    public Obstacle(int windowWidth, int speed) {
         this.windowWidth = windowWidth;
         this.size = 40;
+        this.speed = speed;
         respawn();
     }
 
-    // respawn() method: positions obstacle just below screen at random horizontal position
     public void respawn() {
         y = 800;
         x = (int) (Math.random() * (windowWidth - size));
     }
 
-    // move() method: moves obstacle upward (decrement y)
     public void move() {
-        y -= 3;
+        y -= speed;
     }
 
-    // isOffScreen() method: returns true when obstacle has moved past top of screen
     public boolean isOffScreen() {
         return y + size < 0;
     }
 
-    // Getters
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getSize() {
-        return size;
-    }
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getSize() { return size; }
 }
